@@ -1,49 +1,39 @@
 package nicolay.wk1;
 
 import java.sql.Connection;
-import java.sql.ResultSet;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 
 public class DBUtil {
-  public static boolean saveQuotesToDatabase(List<Quote> quotes, Connection connection) {
-    String query = getInsertQuotesQuery(quotes);
+  public static void saveQuotesToDatabase(List<Quote> quotes) throws SQLException {
+    String query = "INSERT INTO quotes(symbol, price, volume, date) VALUES (?, ?, ?, ?)";
 
-    try (
-      Statement stmt = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-      ResultSet rs = stmt.executeQuery(query)
-    ) {
-      return true;
-    } catch (SQLException e) {
-      System.err.println(e);
-      return false;
-    }
-  }
-
-  private static String getInsertQuotesQuery(List<Quote> quotes) {
-    StringBuilder query = new StringBuilder();
-    query.append("INSERT INTO quotes(symbol, price, volume, date) VALUES ");
+    Connection connection = ConnectionManager.getInstance().getConnection();
+    PreparedStatement stmt = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
 
     for (Quote quote : quotes) {
-      query.append("(");
-      query.append(quote.getSymbol());
-      query.append(", ");
-
-      query.append(quote.getPrice());
-      query.append(", ");
-
-      query.append(quote.getVolume());
-      query.append(", ");
-
-      query.append(quote.getDate());
-      if (quotes.indexOf(quote) == quotes.size()-1) {
-        query.append(");");
-      } else {
-        query.append("),");
-      }
+      stmt.setString(1, quote.getSymbol());
+      stmt.setDouble(2, quote.getPrice());
+      stmt.setInt(3, quote.getVolume());
+      stmt.setTimestamp(4, quote.getDate());
+      stmt.addBatch();
     }
 
-    return query.toString();
+    stmt.executeBatch();
+    stmt.close();
+  }
+
+  public static void clearTable(String tableName) {
+    String query = "DELETE FROM " + tableName;
+    Connection connection = ConnectionManager.getInstance().getConnection();
+    try (
+        PreparedStatement stmt = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)
+    ) {
+      stmt.executeUpdate();
+    } catch (SQLException e) {
+      System.err.println(e);
+    }
   }
 }
