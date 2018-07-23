@@ -9,6 +9,13 @@ public class Quote {
   private int volume;
   private Timestamp date;
 
+  public Quote (){
+    symbol = null;
+    price = 0;
+    volume = 0;
+    date = null;
+  }
+
   public Quote (String symbol, double price, int volume, Timestamp date) {
     this.symbol = symbol;
     this.price = price;
