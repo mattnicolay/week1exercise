@@ -130,13 +130,14 @@ public class DBUtil {
    * @return the time offset in milliseconds
    */
   private static long getOffset(Calendar date, TimeSetting timeSetting) {
-    if (timeSetting == TimeSetting.DAY) {
-      return ONE_DAY_IN_MILLISECONDS;
-    } else if (timeSetting == TimeSetting.MONTH) {
-      return ONE_DAY_IN_MILLISECONDS * date.getActualMaximum(Calendar.DAY_OF_MONTH);
-    } else {
-      System.err.println("Improper time setting provided.");
-      return 0;
+    switch (timeSetting) {
+      case DAY:
+        return ONE_DAY_IN_MILLISECONDS;
+      case MONTH:
+        return ONE_DAY_IN_MILLISECONDS * date.getActualMaximum(Calendar.DAY_OF_MONTH);
+      default:
+        System.err.println("Improper time setting provided.");
+        return 0;
     }
   }
 }
