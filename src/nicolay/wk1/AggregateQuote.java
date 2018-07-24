@@ -6,12 +6,20 @@ public class AggregateQuote {
   private String symbol;
   private double maxPrice;
   private double minPrice;
+  private double closingPrice;
   private int totalVolume;
   private Timestamp date;
 
 
-  public Timestamp getDate() {
+  public double getClosingPrice() {
+    return closingPrice;
+  }
 
+  public void setClosingPrice(double closingPrice) {
+    this.closingPrice = closingPrice;
+  }
+
+  public Timestamp getDate() {
     return date;
   }
 
@@ -20,7 +28,6 @@ public class AggregateQuote {
   }
 
   public int getTotalVolume() {
-
     return totalVolume;
   }
 
@@ -29,7 +36,6 @@ public class AggregateQuote {
   }
 
   public double getMinPrice() {
-
     return minPrice;
   }
 
@@ -38,7 +44,6 @@ public class AggregateQuote {
   }
 
   public double getMaxPrice() {
-
     return maxPrice;
   }
 
@@ -47,7 +52,6 @@ public class AggregateQuote {
   }
 
   public String getSymbol() {
-
     return symbol;
   }
 
@@ -56,15 +60,17 @@ public class AggregateQuote {
   }
 
   public String toString() {
-    return "symbol: "
+    return "Symbol: "
         + symbol
-        + "\nmaxPrice: "
+        + "\nMaximum Price: "
         + maxPrice
-        + "\nminPrice: "
+        + "\nMinimum Price: "
         + minPrice
-        + "\ntotalVolume: "
+        + "\nClosing Price: "
+        + closingPrice
+        + "\nTotal Volume: "
         + totalVolume
-        + "\ndate: "
+        + "\nDate: "
         + date;
   }
 }
