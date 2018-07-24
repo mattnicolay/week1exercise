@@ -2,6 +2,9 @@ package nicolay.wk1;
 
 import java.sql.Timestamp;
 
+/**
+ * Class to represent a single stock quote. Holds data for the stock symbol, price, volume, and date
+ */
 public class Quote {
 
   private String symbol;

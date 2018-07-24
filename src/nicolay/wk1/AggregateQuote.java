@@ -2,14 +2,40 @@ package nicolay.wk1;
 
 import java.sql.Timestamp;
 
+/**
+ * Class to represent an aggregated view of a quote, storing a symbol and time period, and the
+ * maximum price, minimum price, closing price, and total volume for that symbol and time period.
+ * This time period is either one day or one month, with the starting date being the startDate
+ * field.
+ */
 public class AggregateQuote {
   private String symbol;
   private double maxPrice;
   private double minPrice;
   private double closingPrice;
   private int totalVolume;
-  private Timestamp date;
+  private Timestamp startDate;
+  // at the moment the timeSetting field has no use other than storing information
+  private TimeSetting timeSetting;
 
+  public AggregateQuote(String symbol, double maxPrice, double minPrice, double closingPrice,
+      int totalVolume, Timestamp startDate, TimeSetting timeSetting) {
+    this.symbol = symbol;
+    this.maxPrice = maxPrice;
+    this.minPrice = minPrice;
+    this.closingPrice = closingPrice;
+    this.totalVolume = totalVolume;
+    this.startDate = startDate;
+    this.timeSetting = timeSetting;
+  }
+
+  public TimeSetting getTimeSetting() {
+    return timeSetting;
+  }
+
+  public void setTimeSetting(TimeSetting timeSetting) {
+    this.timeSetting = timeSetting;
+  }
 
   public double getClosingPrice() {
     return closingPrice;
@@ -19,12 +45,12 @@ public class AggregateQuote {
     this.closingPrice = closingPrice;
   }
 
-  public Timestamp getDate() {
-    return date;
+  public Timestamp getStartDate() {
+    return startDate;
   }
 
-  public void setDate(Timestamp date) {
-    this.date = date;
+  public void setStartDate(Timestamp startDate) {
+    this.startDate = startDate;
   }
 
   public int getTotalVolume() {
@@ -71,6 +97,8 @@ public class AggregateQuote {
         + "\nTotal Volume: "
         + totalVolume
         + "\nDate: "
-        + date;
+        + startDate
+        + "\nTime Period: "
+        + timeSetting;
   }
 }

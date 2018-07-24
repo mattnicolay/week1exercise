@@ -4,16 +4,21 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
+/**
+ * Singleton class used to handle a connection to a MySQL database. Having one database connection
+ * across the application is more efficient than opening and closing connections for every
+ * query.
+ */
 public class ConnectionManager
 {
   private static ConnectionManager instance = null;
 
   private final String USERNAME = "dbuser";
   private final String PASSWORD = "dbpassword";
-  private final String M_CONN_STRING =
+  private final String MYSQL_CONNECTION_STRING =
       "jdbc:mysql://localhost/week1exercise?serverTimezone=America/Chicago";
 
-  private Connection conn = null;
+  private Connection connection = null;
 
   private ConnectionManager() {
   }
@@ -28,7 +33,7 @@ public class ConnectionManager
   private boolean openConnection()
   {
     try {
-        conn = DriverManager.getConnection(M_CONN_STRING, USERNAME, PASSWORD);
+        connection = DriverManager.getConnection(MYSQL_CONNECTION_STRING, USERNAME, PASSWORD);
         return true;
     }
     catch (SQLException e) {
@@ -40,22 +45,22 @@ public class ConnectionManager
 
   public Connection getConnection()
   {
-    if (conn == null) {
+    if (connection == null) {
       if (openConnection()) {
         System.out.println("Connection opened");
-        return conn;
+        return connection;
       } else {
         return null;
       }
     }
-    return conn;
+    return connection;
   }
 
   public void close() {
     System.out.println("Closing connection");
     try {
-      conn.close();
-      conn = null;
+      connection.close();
+      connection = null;
     } catch (Exception e) {
     }
   }

@@ -10,13 +10,14 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * Utility class used to connect to a MySQL database. Allows for inserting, deleting, and gathering
+ * data from the database.
+ */
 public class DBUtil {
 
   private static final long ONE_DAY_IN_MILLISECONDS = 86400000L;
   private static Connection connection = ConnectionManager.getInstance().getConnection();
-
-  public static final int DAILY = 0;
-  public static final int MONTHLY = 1;
 
   /**
    * Method to save a list of stock quotes to the database
@@ -28,6 +29,7 @@ public class DBUtil {
 
     PreparedStatement stmt = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
 
+    // the addBatch/executeBatch methods allow for multiple queries to be executed at one time
     for (Quote quote : quotes) {
       stmt.setString(1, quote.getSymbol());
       stmt.setDouble(2, quote.getPrice());
@@ -66,63 +68,52 @@ public class DBUtil {
    * @return an AggregateQuote object representing the aggregate view of the data
    * @throws SQLException
    */
-  public static AggregateQuote getAggregateData(String stockSymbol, Calendar calendarDate, int timeSetting)
+  public static AggregateQuote getAggregateData(String stockSymbol, Calendar calendarDate, TimeSetting timeSetting)
       throws SQLException {
     long offset = getOffset(calendarDate, timeSetting);
     if (offset == 0) {
+      // if offset is 0, that means an improper time setting was given.
       return null;
     }
 
-    String firstQuery =
-        "SELECT MAX(price) AS maxPrice, MIN(price) AS minPrice, SUM(volume) AS totalVolume\n"
-        + "FROM quotes\n"
-        + "WHERE symbol = ? AND date >= ? AND date < ?";
-
-    String secondQuery = "SELECT price AS closingPrice, MAX(date)\n"
-        + "FROM quotes\n"
-        + "WHERE symbol = ? AND date < ?";
+    String query = "SELECT maxPrice, minPrice, totalVolume, closingPrice\n"
+        + "FROM \n"
+        + "(SELECT MAX(price) AS maxPrice, MIN(price) AS minPrice, SUM(VOLUME) AS totalVolume \n"
+        + " FROM quotes\n"
+        + "WHERE symbol = ? AND date >= ? AND date < ?) s1\n"
+        + "JOIN\n"
+        + "(SELECT price AS closingPrice, MAX(date)\n"
+        + " FROM quotes\n"
+        + " WHERE symbol = ? AND date < ?) s2";
 
     AggregateQuote result = null;
     ResultSet rs = null;
-    PreparedStatement stmt = null;
 
-    try {
-      stmt = connection.prepareStatement(firstQuery,
-          ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-      result = new AggregateQuote();
-
+    try (
+        PreparedStatement stmt = connection.prepareStatement(query,
+        ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+      ){
       Date date = calendarDate.getTime();
+      Timestamp selectedDate = new Timestamp(date.getTime());
+      // create a timestamp to represent one day/month after the specified date/month using offset
+      Timestamp nextTimePeriod = new Timestamp(date.getTime() + offset);
 
       stmt.setString(1, stockSymbol);
-      stmt.setTimestamp(2, new Timestamp(date.getTime()));
-      // create a timestamp to represent the day/month after the specified date/month using offset
-      stmt.setTimestamp(3, new Timestamp(date.getTime() + offset));
+      stmt.setTimestamp(2, selectedDate);
+      stmt.setTimestamp(3, nextTimePeriod);
+      stmt.setString(4, stockSymbol);
+      stmt.setTimestamp(5, nextTimePeriod);
       rs = stmt.executeQuery();
       rs.last();
 
-      result.setSymbol(stockSymbol);
-      result.setDate(new Timestamp(date.getTime()));
-      result.setMaxPrice(rs.getDouble("maxPrice"));
-      result.setMinPrice(rs.getDouble("minPrice"));
-      result.setTotalVolume(rs.getInt("totalVolume"));
-
-      stmt = connection.prepareStatement(secondQuery,
-          ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-
-      stmt.setString(1, stockSymbol);
-      stmt.setTimestamp(2, new Timestamp(date.getTime() + offset));
-      rs = stmt.executeQuery();
-      rs.last();
-
-      result.setClosingPrice(rs.getDouble("closingPrice"));
+      result = new AggregateQuote(stockSymbol, rs.getDouble("maxPrice"),
+          rs.getDouble("minPrice"), rs.getDouble("closingPrice"),
+          rs.getInt("totalVolume"), selectedDate, timeSetting);
     } catch (SQLException e) {
       System.err.println(e);
     } finally {
       if (rs != null) {
         rs.close();
-      }
-      if (stmt != null) {
-        stmt.close();
       }
     }
 
@@ -135,13 +126,13 @@ public class DBUtil {
    * uses Calendar parameter to calculate the number of days in the month and returns milliseconds
    * equal to that many days.
    * @param date a Calendar object of the date/month over which to aggregate data
-   * @param timeSetting the time period over which to aggregate (either DAILY (0) or MONTHLY (1))
+   * @param timeSetting the time period over which to aggregate
    * @return the time offset in milliseconds
    */
-  private static long getOffset(Calendar date, int timeSetting) {
-    if (timeSetting == DAILY) {
+  private static long getOffset(Calendar date, TimeSetting timeSetting) {
+    if (timeSetting == TimeSetting.DAY) {
       return ONE_DAY_IN_MILLISECONDS;
-    } else if (timeSetting == MONTHLY) {
+    } else if (timeSetting == TimeSetting.MONTH) {
       return ONE_DAY_IN_MILLISECONDS * date.getActualMaximum(Calendar.DAY_OF_MONTH);
     } else {
       System.err.println("Improper time setting provided.");
