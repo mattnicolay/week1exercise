@@ -15,7 +15,6 @@ public class AggregateQuote {
   private double closingPrice;
   private int totalVolume;
   private Timestamp startDate;
-  // at the moment the timeSetting field has no use other than storing information
   private TimeSetting timeSetting;
 
   public AggregateQuote(String symbol, double maxPrice, double minPrice, double closingPrice,
